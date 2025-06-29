@@ -560,9 +560,87 @@
                         [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
                         [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13]
                     ],
-                    // S2-S8... (simplified for brevity)
-                    // In a full implementation, all 8 S-boxes would be defined here
+                    // S2
+                    [
+                        [15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10],
+                        [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5],
+                        [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15],
+                        [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9]
+                    ],
+                    // S3
+                    [
+                        [10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8],
+                        [13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1],
+                        [13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7],
+                        [1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12]
+                    ],
+                    // S4
+                    [
+                        [7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15],
+                        [13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9],
+                        [10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4],
+                        [3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14]
+                    ],
+                    // S5
+                    [
+                        [2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9],
+                        [14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6],
+                        [4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14],
+                        [11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3]
+                    ],
+                    // S6
+                    [
+                        [12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11],
+                        [10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8],
+                        [9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6],
+                        [4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13]
+                    ],
+                    // S7
+                    [
+                        [4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1],
+                        [13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6],
+                        [1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2],
+                        [6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12]
+                    ],
+                    // S8
+                    [
+                        [13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7],
+                        [1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2],
+                        [7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8],
+                        [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11]
+                    ]
                 ];
+            }
+            
+            // Feistel function
+            feistel(R, K) {
+                // Expansion (32 bits -> 48 bits)
+                const expanded = this.permute(BigInt(R), this.E);
+                
+                // XOR with round key (48 bits)
+                const xored = expanded ^ K;
+                
+                // S-box substitution (48 bits -> 32 bits)
+                let result = 0n;
+                for (let i = 0; i < 8; i++) {
+                    // Extract 6 bits for this S-box
+                    const bits = Number((xored >> BigInt(42 - 6 * i)) & 0x3Fn);
+                    
+                    // Get row (first and last bit)
+                    const row = ((bits >> 5) << 1) | (bits & 1);
+                    
+                    // Get column (middle 4 bits)
+                    const col = (bits >> 1) & 0x0F;
+                    
+                    // Get value from S-box
+                    const val = BigInt(this.S[i][row][col]);
+                    
+                    // Combine results
+                    result = (result << 4n) | val;
+                }
+                
+                // Permutation (32 bits -> 32 bits)
+                return this.permute(result, this.P);
             }
             
             // Helper methods
@@ -609,80 +687,107 @@
                 return subKeys;
             }
             
-            // Feistel function
-            feistel(R, K) {
-                // Expansion
-                const expanded = this.permute(BigInt(R), this.E);
+            // Main encryption method
+            encrypt(plaintext) {
+                // Convert plaintext to bytes
+                const encoder = new TextEncoder();
+                const data = encoder.encode(plaintext);
+                const padded = this.pad(data);
+                const blockCount = Math.ceil(padded.length / 8);
                 
-                // XOR with round key
-                const xored = expanded ^ K;
+                let result = '';
                 
-                // S-box substitution (simplified)
-                let result = 0n;
-                // In a full implementation, this would process through all 8 S-boxes
-                
-                // Permutation
-                result = this.permute(result, this.P);
+                // Process each 8-byte block
+                for (let i = 0; i < blockCount; i++) {
+                    // Get 8-byte block (or less for the last block)
+                    const blockBytes = padded.slice(i * 8, (i + 1) * 8);
+                    
+                    // Convert to 64-bit BigInt
+                    let block = 0n;
+                    for (let j = 0; j < 8; j++) {
+                        block = (block << 8n) | BigInt(blockBytes[j] || 0);
+                    }
+                    
+                    // Initial permutation
+                    let permuted = this.permute(block, this.IP);
+                    
+                    // Split into left and right halves
+                    let L = (permuted >> 32n) & 0xFFFFFFFFn;
+                    let R = permuted & 0xFFFFFFFFn;
+                    
+                    // 16 rounds of Feistel network
+                    for (let j = 0; j < 16; j++) {
+                        const temp = R;
+                        R = L ^ this.feistel(R, this.subKeys[j]);
+                        L = temp;
+                    }
+                    
+                    // Final swap and concatenation
+                    const combined = (R << 32n) | L;
+                    
+                    // Final permutation
+                    const cipherBlock = this.permute(combined, this.FP);
+                    
+                    // Convert to hex string and pad to 16 characters (64 bits)
+                    result += cipherBlock.toString(16).padStart(16, '0');
+                }
                 
                 return result;
             }
             
-            // Main encryption method
-            encrypt(plaintext) {
-                // Convert plaintext to 64-bit block
-                const block = this.textToBlock(plaintext);
-                
-                // Initial permutation
-                let permuted = this.permute(block, this.IP);
-                
-                // Split into left and right halves
-                let L = (permuted >> 32n) & 0xFFFFFFFFn;
-                let R = permuted & 0xFFFFFFFFn;
-                
-                // 16 rounds of Feistel network
-                for (let i = 0; i < 16; i++) {
-                    const temp = R;
-                    R = L ^ this.feistel(R, this.subKeys[i]);
-                    L = temp;
-                }
-                
-                // Final swap and concatenation
-                const combined = (R << 32n) | L;
-                
-                // Final permutation
-                const cipherBlock = this.permute(combined, this.FP);
-                
-                // Convert to hex string
-                return cipherBlock.toString(16).padStart(16, '0');
-            }
-            
             // Main decryption method (same as encryption but with reversed subkeys)
             decrypt(ciphertext) {
-                // Convert ciphertext to 64-bit block
-                const block = BigInt('0x' + ciphertext);
-                
-                // Initial permutation
-                let permuted = this.permute(block, this.IP);
-                
-                // Split into left and right halves
-                let L = (permuted >> 32n) & 0xFFFFFFFFn;
-                let R = permuted & 0xFFFFFFFFn;
-                
-                // 16 rounds of Feistel network with reversed subkeys
-                for (let i = 15; i >= 0; i--) {
-                    const temp = R;
-                    R = L ^ this.feistel(R, this.subKeys[i]);
-                    L = temp;
+                // Check if ciphertext is a valid hex string
+                if (!/^[0-9a-fA-F]+$/.test(ciphertext)) {
+                    throw new Error('Invalid ciphertext: must be a hexadecimal string');
                 }
                 
-                // Final swap and concatenation
-                const combined = (R << 32n) | L;
+                // Ensure ciphertext length is a multiple of 16 (64 bits in hex)
+                if (ciphertext.length % 16 !== 0) {
+                    throw new Error('Invalid ciphertext length: must be a multiple of 16 hex digits');
+                }
                 
-                // Final permutation
-                const plainBlock = this.permute(combined, this.FP);
+                const blockCount = ciphertext.length / 16;
+                let decryptedBytes = [];
                 
-                // Convert to text
-                return this.blockToText(plainBlock);
+                // Process each 16-character (64-bit) block
+                for (let i = 0; i < blockCount; i++) {
+                    const blockHex = ciphertext.substr(i * 16, 16);
+                    const block = BigInt('0x' + blockHex);
+                    
+                    // Initial permutation
+                    let permuted = this.permute(block, this.IP);
+                    
+                    // Split into left and right halves
+                    let L = (permuted >> 32n) & 0xFFFFFFFFn;
+                    let R = permuted & 0xFFFFFFFFn;
+                    
+                    // 16 rounds of Feistel network with reversed subkeys
+                    for (let j = 15; j >= 0; j--) {
+                        const temp = R;
+                        R = L ^ this.feistel(R, this.subKeys[j]);
+                        L = temp;
+                    }
+                    
+                    // Final swap and concatenation
+                    const combined = (R << 32n) | L;
+                    
+                    // Final permutation
+                    const plainBlock = this.permute(combined, this.FP);
+                    
+                    // Convert to bytes
+                    for (let j = 7; j >= 0; j--) {
+                        const byte = Number((plainBlock >> BigInt(j * 8)) & 0xFFn);
+                        decryptedBytes.push(byte);
+                    }
+                }
+                
+                // Remove padding
+                const unpadded = this.unpad(new Uint8Array(decryptedBytes));
+                
+                // Convert bytes back to text
+                const decoder = new TextDecoder();
+                return decoder.decode(unpadded);
             }
             
             // Helper methods for text <-> block conversion
@@ -708,11 +813,11 @@
             // Padding methods
             pad(text) {
                 const padLength = 8 - (text.length % 8);
-                return text + String.fromCharCode(padLength).repeat(padLength);
+                return new Uint8Array([...text, ...new Uint8Array(padLength).fill(padLength)]);
             }
             
             unpad(text) {
-                const padLength = text.charCodeAt(text.length - 1);
+                const padLength = text[text.length - 1];
                 return text.slice(0, -padLength);
             }
         }
@@ -862,10 +967,15 @@
         function rc4Decrypt() {
             try {
                 const key = document.getElementById('rc4-key').value;
-                const text = document.getElementById('rc4-text').value;
+                const text = document.getElementById('rc4-text').value.trim(); // Add trim() to remove any whitespace
                 
                 if (!key || !text) {
                     throw new Error('Please enter both key and text');
+                }
+                
+                // Check if the input is a valid hex string
+                if (!/^[0-9a-fA-F]+$/.test(text)) {
+                    throw new Error('Please enter a valid hexadecimal string for decryption');
                 }
                 
                 const cipher = new RC4(key);
